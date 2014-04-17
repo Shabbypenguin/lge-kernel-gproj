@@ -49,8 +49,7 @@
     # This cleans out crud and makes new config
     $MAKE clean
     $MAKE mrproper
-    rm -rf $MODULES
-    rm -rf $PACK
+    rm -rf $MODULES && rm -rf $PACK
     [ -d "$PACK" ] || mkdir "$PACK"
     [ -d "$MODULES" ] || mkdir -p "$MODULES"
     exec > >(tee $PACK/buildlog.txt) 2>&1 
@@ -63,23 +62,20 @@
     # These move files to easier locations
     find -name '*.ko' -exec cp -av {} $MODULES/ \;
     sleep 5
-    #for x in `find $MODULES -name "*.ko"`; do $STRIP --strip-unneeded $x; done
+    for x in `find $MODULES -name "*.ko"`; do $STRIP --strip-unneeded $x; done
 
     # -----------------------------------------------------------------------------------------------
     # This part packs the img up :)
     # In order for this part to work you need the mkbootimg tools
     # -----------------------------------------------------------------------------------------------
 
-    RAMDISK=$TW
     cd $PACK
 	cp $OUT/zImage $PACK
 	mkbootfs $RAMDISK | gzip > $PACK/ramdisk.gz
-	mkbootimg --cmdline "$CMDLINE" --kernel $PACK/zImage --ramdisk $PACK/ramdisk.gz --pagesize $PAGE --base $BASE --ramdisk_offset $RAMADDR -o $PACK/boot.img
-	rm -rf ramdisk.gz
-	rm -rf zImage  
-	$TOOLS/loki patch boot $TOOLS/E980-aboot.img $PACK/boot.img $PACK/boot.lok
-	rm -rf boot.img
-	mv boot.lok boot.img
+	mkbootimg --cmdline "$CMDLINE" --kernel $PACK/zImage --ramdisk $PACK/ramdisk.gz --pagesize $PAGE --base $BASE --ramdisk_offset $RAMADDR -o $PACK/boot.img  
+	#$TOOLS/loki patch boot $TOOLS/E980-aboot.img $PACK/boot.img $PACK/boot.lok
+	#rm -rf boot.img 
+	rm -rf ramdisk.gz && rm -rf zImage
 	cp -R $UPDATER/* $PACK
 	zip -r "CM-"$NOW".zip" * -x "*.txt"
     # -----------------------------------------------------------------------------------------------
